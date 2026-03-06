@@ -5,32 +5,33 @@ pipeline {
 
         stage('Clone Repository') {
             steps {
-                git
-'https://github.com/Prathamesh-Pixel/hotstar-devsecops-project.git'
+                git 'https://github.com/YOUR-USERNAME/hotstar-devsecops-project.git'
             }
-     }
-     stage('Install Dependencies') {
-         steps {
-             sh 'npm install'
-         }
-     }
+        }
 
-         stage('Build App') {
-             steps {
-                 sh 'npm run build'
-                 }
-         }
+        stage('Install Dependencies') {
+            steps {
+                sh 'npm install'
+            }
+        }
 
-         stage('Docker Build') {
-             steps {
-                 sh 'docker build -t hotstar-clone .'
-                 }
-         }
+        stage('Build App') {
+            steps {
+                sh 'npm run build'
+            }
+        }
 
-         stage('Run Container') {
-             steps {
-                 sh 'docker run -d -p 3000:3000 hoststar-clone'
-                 }
-         }
-     }
+        stage('Docker Build') {
+            steps {
+                sh 'docker build -t hotstar-clone .'
+            }
+        }
+
+        stage('Run Container') {
+            steps {
+                sh 'docker run -d -p 3000:3000 hotstar-clone'
+            }
+        }
+
+    }
 }
