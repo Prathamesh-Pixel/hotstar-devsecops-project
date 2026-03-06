@@ -2,13 +2,7 @@ pipeline {
     agent any
 
     stages {
-
-        stage('Clone Repository') {
-            steps {
-                git 'https://github.com/Prathamesh-Pixel/hotstar-devsecops-project.git'
-            }
-        }
-
+        
         stage('Install Dependencies') {
             steps {
                 sh 'npm install'
