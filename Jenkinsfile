@@ -5,7 +5,7 @@ pipeline {
 
         stage('Clone Repository') {
             steps {
-                git 'https://github.com/YOUR-USERNAME/hotstar-devsecops-project.git'
+                git 'https://github.com/Prathamesh-Pixel/hotstar-devsecops-project.git'
             }
         }
 
