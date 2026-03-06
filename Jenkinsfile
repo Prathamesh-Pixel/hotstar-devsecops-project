@@ -6,7 +6,7 @@ pipeline {
         stage('Clone Repository') {
             steps {
                 git
-'https://github.com/Prathamesh-Pixel/hotstar-devsecops-project.git
+'https://github.com/Prathamesh-Pixel/hotstar-devsecops-project.git'
             }
      }
      stage('Install Dependencies') {
