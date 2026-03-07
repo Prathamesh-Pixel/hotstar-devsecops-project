@@ -14,11 +14,11 @@ pipeline {
              withSonarQubeEnv('SonarQube') {
               script {
                def scannerHome = tool 'sonar-scanner'
-              sh "${scannerHome}/bin/sonar-scanner"
+               sh "${scannerHome}/bin/sonar-scanner"
              }
-        }
-    }
-
+          }
+       }
+     }
         stage('Build App') {
             steps {
                 sh 'CI=false npm run build'
@@ -39,4 +39,3 @@ pipeline {
 
     }
   }
-}
