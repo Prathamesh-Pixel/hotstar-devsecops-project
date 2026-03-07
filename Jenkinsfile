@@ -15,6 +15,7 @@ pipeline {
               sh 'sonar-scanner'
              }
         }
+    }
 
         stage('Build App') {
             steps {
