@@ -34,13 +34,23 @@ stage('SonarQube Analysis') {
                 waitForQualityGate abortPipeline: true
             }
         }
-
+        
         stage('Build App') {
             steps {
                 sh 'CI=false npm run build'
             }
         }
 
+        stages {
+        // ... (Checkout, NPM Install, SonarQube, Quality Gate)
+
+        stage('Trivy FS Scan') {
+            steps {
+                // Checks your code & libraries BEFORE building
+                sh "trivy fs --format table -o trivy-fs-report.html --severity CRITICAL ."
+            }
+        }
+                    
         stage('Docker Build') {
             steps {
                 // Stops/Removes old container so the new one doesn't fail on port 3000
@@ -49,6 +59,12 @@ stage('SonarQube Analysis') {
             }
         }
 
+        stage('Trivy Image Scan') {
+            steps {
+                // Checks the final Docker image AFTER building
+                sh "trivy image --format table -o trivy-image-report.html --severity HIGH,CRITICAL hotstar-clone"
+            }
+        }
         stage('Run Container') {
             steps {
                 sh 'docker run -d --name hotstar-container -p 3000:3000 hotstar-clone'
