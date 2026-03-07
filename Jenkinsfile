@@ -8,15 +8,20 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
+stage('SonarQube Analysis') {
     steps {
         withSonarQubeEnv('SonarQube') {
             script {
                 def scannerHome = tool 'sonar-scanner'
                 
-                def scannerPath = "${scannerHome}/bin/sonar-scanner"
+                def scannerExecutable = sh(script: "find ${scannerHome} -name sonar-scanner -type f", returnStdout: true).trim()
                 
-                sh "${scannerPath} || ${scannerHome}/sonar-scanner"
+                if (scannerExecutable) {
+                    sh "chmod +x ${scannerExecutable}"
+                    sh "${scannerExecutable}"
+                } else {
+                    error "Sonar-scanner executable not found in ${scannerHome}. Please check Tool configuration."
+                }
             }
         }
     }
