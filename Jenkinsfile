@@ -9,17 +9,21 @@ pipeline {
         }
 
         stage('SonarQube Analysis') {
-            steps {
-                // 'SonarQube' must match the name in Manage Jenkins > System
-                withSonarQubeEnv('SonarQube') {
-                    script {
-                        def scannerHome = tool 'sonar-scanner'
-                        // It will automatically find your sonar-project.properties file
-                        sh "${scannerHome}/bin/sonar-scanner"
-                    }
-                }
+    steps {
+        withSonarQubeEnv('SonarQube') {
+            script {
+                // This 'sonar-scanner' matches the Name in your screenshot
+                def scannerHome = tool 'sonar-scanner'
+                
+                // We use a find command or check both possible locations
+                // If /bin/ exists, use it; otherwise, use the root folder
+                def scannerPath = "${scannerHome}/bin/sonar-scanner"
+                
+                sh "${scannerPath} || ${scannerHome}/sonar-scanner"
             }
         }
+    }
+}
 
         stage("Quality Gate") {
             steps {
