@@ -9,6 +9,13 @@ pipeline {
             }
         }
 
+        stage('SonarQube Analysis') {
+            steps {
+             withSonarQubeEnv('SonarQube') {
+              sh 'sonar-scanner'
+             }
+        }
+
         stage('Build App') {
             steps {
                 sh 'CI=false npm run build'
