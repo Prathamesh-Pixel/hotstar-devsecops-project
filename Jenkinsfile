@@ -1,10 +1,30 @@
 pipeline {
     agent any
 
+    environment {
+        SCAN_IMAGE = "hotstar-clone"
+    }
+
     stages {
+        stage('Secret Scanning (Gitleaks)') {
+            steps {
+                // Scans for hardcoded passwords/keys in your code
+                // Using docker to avoid installing gitleaks binary on the agent
+                sh 'docker run --rm -v $(pwd):/path zricethezav/gitleaks:latest detect --source /path -v'
+            }
+        }
+
         stage('Install Dependencies') {
             steps {
                 sh 'npm install'
+            }
+        }
+
+        stage('SCA Scan (OWASP Dependency-Check)') {
+            steps {
+                // Scans your node_modules for known vulnerabilities
+                dependencyCheck additionalArguments: '--scan ./ --format HTML --format XML', odcInstallation: 'DP-Check'
+                dependencyCheckPublisher pattern: 'dependency-check-report.xml'
             }
         }
 
@@ -40,45 +60,41 @@ pipeline {
 
         stage('Trivy FS Scan') {
             steps {
-                // Checks your code & libraries BEFORE building
                 sh "trivy fs --format table -o trivy-fs-report.html --severity CRITICAL ."
             }
         }
                     
         stage('Docker Build') {
             steps {
-                sh 'docker rm -f hotstar-container || true'
-                sh 'docker build -t hotstar-clone .'
+                sh "docker rm -f hotstar-container || true"
+                sh "docker build -t ${SCAN_IMAGE} ."
             }
         }
 
         stage('Trivy Image Scan') {
             steps {
-                // Checks the final Docker image AFTER building
-                sh "trivy image --format table -o trivy-image-report.html --severity HIGH,CRITICAL hotstar-clone"
+                sh "trivy image --format table -o trivy-image-report.html --severity HIGH,CRITICAL ${SCAN_IMAGE}"
             }
         }
 
         stage('Run Container') {
             steps {
-                sh 'docker run -d --name hotstar-container -p 3000:3000 hotstar-clone'
+                sh "docker run -d --name hotstar-container -p 3000:3000 ${SCAN_IMAGE}"
             }
         }
     }
     
     post {
         always {
-            // Keep your server clean
             sh 'docker image prune -f'
             
-            // This publishes your Trivy reports so you can see them in Jenkins
             publishHTML([
                 allowMissing: false,
                 alwaysLinkToLastBuild: true,
                 keepAll: true,
                 reportDir: '.',
-                reportFiles: 'trivy-fs-report.html, trivy-image-report.html',
-                reportName: 'Trivy Security Reports'
+                reportFiles: 'trivy-fs-report.html, trivy-image-report.html, dependency-check-report.html',
+                reportName: 'Security & Vulnerability Reports'
             ])
         }
     }
