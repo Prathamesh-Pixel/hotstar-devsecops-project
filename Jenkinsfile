@@ -29,22 +29,18 @@ pipeline {
         }
 
         stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv('SonarQube') {
-                    script {
-                        def scannerHome = tool 'sonar-scanner'
-                        def scannerExecutable = sh(script: "find ${scannerHome} -name sonar-scanner -type f", returnStdout: true).trim()
-                        
-                        if (scannerExecutable) {
-                            sh "chmod +x ${scannerExecutable}"
-                            sh "${scannerExecutable}"
-                        } else {
-                            error "Sonar-scanner executable not found. Check Tool configuration."
-                        }
-                    }
+    steps {
+        // This injects the token from Jenkins credentials so Gitleaks never sees it
+        withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+            withSonarQubeEnv('SonarQube') {
+                script {
+                    def scannerHome = tool 'sonar-scanner'
+                    sh "${scannerHome}/bin/sonar-scanner -Dsonar.login=${SONAR_TOKEN}"
                 }
             }
         }
+    }
+}
 
         stage("Quality Gate") {
             steps {
