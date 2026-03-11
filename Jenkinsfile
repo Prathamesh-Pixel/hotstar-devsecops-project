@@ -15,6 +15,7 @@ pipeline {
         stage('Secret Scanning (Gitleaks)') {
             steps {
                 // Scans for hardcoded passwords/keys in your code
+                // Using docker to avoid installing gitleaks binary on the agent
                 sh 'docker run --rm -v $(pwd):/path zricethezav/gitleaks:latest detect --source /path -v'
             }
         }
@@ -27,6 +28,7 @@ pipeline {
 
         stage('SCA Scan (OWASP Dependency-Check)') {
             steps {
+                // Scans your node_modules for known vulnerabilities
                 dependencyCheck additionalArguments: '--scan ./ --format HTML --format XML', odcInstallation: 'DP-Check'
                 dependencyCheckPublisher pattern: 'dependency-check-report.xml'
             }
@@ -34,6 +36,7 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
+                // This injects the token from Jenkins credentials
                 withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
                     withSonarQubeEnv('SonarQube') {
                         script {
