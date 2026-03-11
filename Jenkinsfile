@@ -3,7 +3,6 @@ pipeline {
 
     options {
         // This is the proper way to clean the workspace in Jenkins 
-        // without needing the specific Cleanup Plugin
         skipDefaultCheckout(false)
         checkoutToSubdirectory('.')
     }
@@ -12,6 +11,7 @@ pipeline {
         SCAN_IMAGE = "hotstar-clone"
     }
 
+    stages {
         stage('Verify Current Commit') {
             steps {
                 script {
