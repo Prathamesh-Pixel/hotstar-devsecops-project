@@ -21,8 +21,6 @@ pipeline {
             }
         }
 
-
-
         stage('Secret Scanning (Gitleaks)') {
             steps {
                 // Scans for hardcoded passwords/keys in your code
