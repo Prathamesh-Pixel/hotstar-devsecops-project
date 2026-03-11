@@ -1,17 +1,27 @@
 pipeline {
     agent any
 
+    options {
+        // This is the proper way to clean the workspace in Jenkins 
+        // without needing the specific Cleanup Plugin
+        skipDefaultCheckout(false)
+        checkoutToSubdirectory('.')
+    }
+
     environment {
         SCAN_IMAGE = "hotstar-clone"
     }
 
-    stages {
-        stage('Clean Workspace') {
+        stage('Verify Current Commit') {
             steps {
-                // Using shell instead of the plugin-dependent cleanWs()
-                sh 'rm -rf *' 
+                script {
+                    def commit = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                    echo "Scanning current commit only: ${commit}"
+                }
             }
         }
+
+
 
         stage('Secret Scanning (Gitleaks)') {
             steps {
