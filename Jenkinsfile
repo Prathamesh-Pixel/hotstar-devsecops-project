@@ -1,6 +1,13 @@
 pipeline {
     agent any
 
+        stages {
+        stage('Clean Workspace') {
+            steps {
+                cleanWs() 
+            }
+        }
+
     environment {
         SCAN_IMAGE = "hotstar-clone"
     }
