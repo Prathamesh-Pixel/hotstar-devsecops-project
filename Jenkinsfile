@@ -1,22 +1,20 @@
 pipeline {
     agent any
 
-    stages {
-        stage('Clean Workspace') {
-            steps {
-                cleanWs() 
-            }
-        }
-
     environment {
         SCAN_IMAGE = "hotstar-clone"
     }
 
     stages {
+        stage('Clean Workspace') {
+            steps {
+                cleanWs()
+            }
+        }
+
         stage('Secret Scanning (Gitleaks)') {
             steps {
                 // Scans for hardcoded passwords/keys in your code
-                // Using docker to avoid installing gitleaks binary on the agent
                 sh 'docker run --rm -v $(pwd):/path zricethezav/gitleaks:latest detect --source /path -v'
             }
         }
@@ -29,25 +27,23 @@ pipeline {
 
         stage('SCA Scan (OWASP Dependency-Check)') {
             steps {
-                // Scans your node_modules for known vulnerabilities
                 dependencyCheck additionalArguments: '--scan ./ --format HTML --format XML', odcInstallation: 'DP-Check'
                 dependencyCheckPublisher pattern: 'dependency-check-report.xml'
             }
         }
 
         stage('SonarQube Analysis') {
-    steps {
-        // This injects the token from Jenkins credentials so Gitleaks never sees it
-        withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-            withSonarQubeEnv('SonarQube') {
-                script {
-                    def scannerHome = tool 'sonar-scanner'
-                    sh "${scannerHome}/bin/sonar-scanner -Dsonar.login=${SONAR_TOKEN}"
+            steps {
+                withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                    withSonarQubeEnv('SonarQube') {
+                        script {
+                            def scannerHome = tool 'sonar-scanner'
+                            sh "${scannerHome}/bin/sonar-scanner -Dsonar.login=${SONAR_TOKEN}"
+                        }
+                    }
                 }
             }
         }
-    }
-}
 
         stage("Quality Gate") {
             steps {
@@ -66,7 +62,7 @@ pipeline {
                 sh "trivy fs --format table -o trivy-fs-report.html --severity CRITICAL ."
             }
         }
-                    
+
         stage('Docker Build') {
             steps {
                 sh "docker rm -f hotstar-container || true"
@@ -86,7 +82,7 @@ pipeline {
             }
         }
     }
-    
+
     post {
         always {
             sh 'docker image prune -f'
@@ -101,5 +97,4 @@ pipeline {
             ])
         }
     }
-}
 }
