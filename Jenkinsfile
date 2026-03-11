@@ -25,6 +25,7 @@ pipeline {
             steps {
                 // Scans for hardcoded passwords/keys in your code
                 // Using docker to avoid installing gitleaks binary on the agent
+                // --no-git ensures we only scan current files, not history
                 sh 'docker run --rm -v $(pwd):/path zricethezav/gitleaks:latest detect --source /path --no-git -v'
             }
         }
@@ -109,3 +110,4 @@ pipeline {
             ])
         }
     }
+}
