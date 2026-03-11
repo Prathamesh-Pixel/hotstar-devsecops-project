@@ -8,7 +8,8 @@ pipeline {
     stages {
         stage('Clean Workspace') {
             steps {
-                cleanWs()
+                // Using shell instead of the plugin-dependent cleanWs()
+                sh 'rm -rf *' 
             }
         }
 
