@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     options {
-        // This is the proper way to clean the workspace in Jenkins 
         skipDefaultCheckout(false)
         checkoutToSubdirectory('.')
     }
@@ -16,16 +15,14 @@ pipeline {
             steps {
                 script {
                     def commit = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-                    echo "Scanning current commit only: ${commit}"
+                    echo "Scanning current commit: ${commit}"
                 }
             }
         }
 
         stage('Secret Scanning (Gitleaks)') {
             steps {
-                // Scans for hardcoded passwords/keys in your code
-                // Using docker to avoid installing gitleaks binary on the agent
-                // --no-git ensures we only scan current files, not history
+                // --no-git bypasses history errors
                 sh 'docker run --rm -v $(pwd):/path zricethezav/gitleaks:latest detect --source /path --no-git -v'
             }
         }
@@ -38,15 +35,25 @@ pipeline {
 
         stage('SCA Scan (OWASP Dependency-Check)') {
             steps {
-                // Scans your node_modules for known vulnerabilities
-                dependencyCheck additionalArguments: '--scan ./ --format HTML --format XML', odcInstallation: 'DP-Check'
-                dependencyCheckPublisher pattern: 'dependency-check-report.xml'
+                script {
+                    // Using Docker to avoid "Tool Not Found" errors
+                    sh """
+                        docker run --rm \
+                        -v \$(pwd):/src \
+                        --user \$(id -u):\$(id -g) \
+                        owasp/dependency-check:latest \
+                        --scan /src \
+                        --format HTML --format XML \
+                        --project "Hotstar-Clone" \
+                        --out /src
+                    """
+                    dependencyCheckPublisher pattern: 'dependency-check-report.xml'
+                }
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
-                // This injects the token from Jenkins credentials
                 withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
                     withSonarQubeEnv('SonarQube') {
                         script {
@@ -99,7 +106,6 @@ pipeline {
     post {
         always {
             sh 'docker image prune -f'
-            
             publishHTML([
                 allowMissing: false,
                 alwaysLinkToLastBuild: true,
