@@ -36,16 +36,21 @@ pipeline {
         stage('SCA Scan (OWASP Dependency-Check)') {
             steps {
                 script {
-                    // Using Docker to avoid "Tool Not Found" errors
+                    // Create the data directory on the host if it doesn't exist
+                    sh "mkdir -p /var/lib/jenkins/owasp-data && chmod 777 /var/lib/jenkins/owasp-data"
+                    
                     sh """
                         docker run --rm \
+                        -e JAVA_OPTS="-Xmx4g" \
                         -v \$(pwd):/src \
+                        -v /var/lib/jenkins/owasp-data:/usr/share/dependency-check/data \
                         --user \$(id -u):\$(id -g) \
                         owasp/dependency-check:latest \
                         --scan /src \
                         --format HTML --format XML \
                         --project "Hotstar-Clone" \
-                        --out /src
+                        --out /src \
+                        --exclude '**/node_modules/**'
                     """
                     dependencyCheckPublisher pattern: 'dependency-check-report.xml'
                 }
