@@ -36,9 +36,6 @@ pipeline {
         stage('SCA Scan (OWASP Dependency-Check)') {
             steps {
                 script {
-                    // Create the data directory on the host if it doesn't exist
-                    sh "mkdir -p /var/lib/jenkins/owasp-data && chmod 777 /var/lib/jenkins/owasp-data"
-                    
                     sh """
                         docker run --rm \
                         -e JAVA_OPTS="-Xmx4g" \
