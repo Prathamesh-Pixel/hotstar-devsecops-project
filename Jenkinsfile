@@ -62,19 +62,17 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            steps {
-                withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-                    withSonarQubeEnv('SonarQube') {
-                        script {
-                            def scannerHome = tool 'sonar-scanner'
-                            sh "${scannerHome}/bin/sonar-scanner -Dsonar.login=${SONAR_TOKEN}"
-                        }
-                    }
-                }
+        stage("SonarQube Analysis") {
+    steps {
+        withSonarQubeEnv('SonarQube') { // Jenkins handles the token automatically here
+            script {
+                def scannerHome = tool 'sonar-scanner'
+                sh "${scannerHome}/bin/sonar-scanner" 
             }
         }
-
+    }
+}
+        
         stage("Quality Gate") {
             steps {
                 waitForQualityGate abortPipeline: true
@@ -87,11 +85,14 @@ pipeline {
             }
         }
 
-        stage('Trivy FS Scan') {
-            steps {
-                sh "trivy fs --format table -o trivy-fs-report.html --severity CRITICAL ."
-            }
+        stage('Trivy File Scan') {
+    steps {
+        script {
+            // Added --timeout 15m and --skip-dirs to avoid the crash
+            sh "trivy fs --format table --timeout 15m --skip-dirs .scannerwork -o trivy-fs-report.html ."
         }
+    }
+}
 
         stage('Docker Build & Push') {
             steps {
