@@ -108,14 +108,19 @@ pipeline {
         }
 
         stage('Deploy to Kubernetes') {
-            steps {
-                script {
-                    sh "kubectl apply -f deployment.yaml"
-                    sh "kubectl apply -f service.yaml"
-                    sh "kubectl rollout status deployment/hotstar-deployment"
-                }
+    steps {
+        script {
+            // We force Jenkins to look at the pratham user's minikube path
+            withEnv(['MINIKUBE_HOME=/home/pratham', 'KUBECONFIG=/var/lib/jenkins/.kube/config']) {
+                sh 'kubectl apply -f deployment.yaml'
+                sh 'kubectl apply -f service.yaml'
+                
+                // To get the IP safely, we use kubectl instead of 'minikube ip'
+                sh "kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type==\"InternalIP\")].address}'"
             }
         }
+    }
+}
 
         stage('Verify Monitoring & Health') {
             steps {
