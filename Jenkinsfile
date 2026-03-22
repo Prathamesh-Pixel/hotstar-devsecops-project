@@ -132,13 +132,13 @@ pipeline {
         stage('Verify Monitoring & Health') {
             steps {
                 script {
-                    def CURRENT_IP = sh(script: "minikube ip", returnStdout: true).trim()
+                    // We REMOVED 'minikube ip' and used our variable instead
                     echo "Checking Observability Stack..."
                     sh "kubectl get pods -n monitoring"
                     
                     sh """
                         for i in {1..3}; do
-                          if curl -sI http://${CURRENT_IP}:30007 | grep '200 OK'; then
+                          if curl -sI http://${clusterIP}:30007 | grep '200 OK'; then
                             echo 'SUCCESS: Hotstar Clone is LIVE!'
                             break
                           else
