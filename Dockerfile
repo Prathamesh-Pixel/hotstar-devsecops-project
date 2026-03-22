@@ -1,4 +1,6 @@
-FROM node:18-alpine
+FROM alpine:latest
+# Or specifically target a fixed version:
+RUN apk upgrade --no-cache libcrypto3 libssl3
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
