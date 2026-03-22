@@ -110,20 +110,19 @@ pipeline {
         stage('Deploy to Kubernetes') {
     steps {
         script {
-            // This 'withEnv' block points Jenkins to the cluster's "Key"
             withEnv(['KUBECONFIG=/var/lib/jenkins/.kube/config']) {
-                
-                // 1. Deploy the Application
+                // 1. Deploy the App
                 sh 'kubectl apply -f deployment.yaml'
                 sh 'kubectl apply -f service.yaml'
                 
-                // 2. Get the Deployment IP safely (Replaces the failing 'minikube ip')
-                def clusterIP = sh(
+                // 2. CAPTURE the IP into a variable (This is the key step!)
+                clusterIP = sh(
                     script: "kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type==\"InternalIP\")].address}'", 
                     returnStdout: true
                 ).trim()
                 
-                echo "🚀 SUCCESS! Hotstar Clone is live at: http://${clusterIP}:30007"
+                // 3. Use the variable here
+                echo "Using Cluster IP: ${clusterIP}"
             }
         }
     }
@@ -152,17 +151,14 @@ pipeline {
         }
 
         stage('DAST Scan (OWASP ZAP)') {
-            when { expression { return params.RUN_FULL_SCAN } }
-            steps {
-                script {
-                    def K8S_IP = sh(script: "minikube ip", returnStdout: true).trim()
-                    sh "chmod -R 777 . || true" 
-                    // Dynamic IP + No Sudo + --net=host
-                    sh "docker run --rm --net=host -v \$(pwd):/zap/wrk/:rw zaproxy/zap-stable zap-baseline.py -t http://${K8S_IP}:30007 -r zap_report.html || true"
-                    sh "chmod -R 755 . || true"
-                }
-            }
+    steps {
+        script {
+            // Use the IP directly instead of calling 'minikube ip'
+            def zapTarget = "http://192.168.49.2:30007"
+            sh "docker run --rm -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t ${zapTarget} || true"
         }
+    }
+}
 
         stage('Trivy Image Scan (Fail-Gate)') {
             steps {
