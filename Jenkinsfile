@@ -108,20 +108,23 @@ pipeline {
         }
 
         stage('Deploy to Kubernetes') {
-    environment {
-        // This tells Jenkins exactly where Pratham's Minikube "World" is
-        MINIKUBE_HOME = '/home/pratham'
-        KUBECONFIG = '/var/lib/jenkins/.kube/config'
-    }
     steps {
         script {
-            // 1. Apply the manifests
-            sh 'kubectl apply -f deployment.yaml'
-            sh 'kubectl apply -f service.yaml'
-            
-            // 2. Bypass 'minikube ip' and get the IP directly from the node
-            def clusterIP = sh(script: "kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type==\"InternalIP\")].address}'", returnStdout: true).trim()
-            echo "Hotstar Clone is deploying at: http://${clusterIP}:30007"
+            // This 'withEnv' block points Jenkins to the cluster's "Key"
+            withEnv(['KUBECONFIG=/var/lib/jenkins/.kube/config']) {
+                
+                // 1. Deploy the Application
+                sh 'kubectl apply -f deployment.yaml'
+                sh 'kubectl apply -f service.yaml'
+                
+                // 2. Get the Deployment IP safely (Replaces the failing 'minikube ip')
+                def clusterIP = sh(
+                    script: "kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type==\"InternalIP\")].address}'", 
+                    returnStdout: true
+                ).trim()
+                
+                echo "🚀 SUCCESS! Hotstar Clone is live at: http://${clusterIP}:30007"
+            }
         }
     }
 }
