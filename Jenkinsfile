@@ -148,13 +148,14 @@ pipeline {
         }
 
         stage('DAST Scan (OWASP ZAP)') {
-            when { expression { return params.RUN_FULL_SCAN } }
-            steps {
-                script {
-                    sh "docker run --rm -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://${clusterIP}:30007 || true"
-                }
-            }
+    when { expression { return params.RUN_FULL_SCAN } }
+    steps {
+        script {
+            // Added -v $(pwd):/zap/wrk/:rw and -u root to fix the report error
+            sh "docker run --rm -v \$(pwd):/zap/wrk/:rw -u root -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://${clusterIP}:30007 -r zap_report.html || true"
         }
+    }
+}
 
         stage('Trivy Image Scan (Fail-Gate)') {
             steps {
