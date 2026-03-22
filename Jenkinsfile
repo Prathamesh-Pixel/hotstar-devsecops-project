@@ -1,3 +1,4 @@
+def clusterIP = ""
 pipeline {
     agent any
 
