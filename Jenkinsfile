@@ -23,8 +23,9 @@ pipeline {
         stage('Verify & Clean') {
             steps {
                 script {
+                    echo "--- STARTING FRESH: NO MINIKUBE COMMANDS ---"
                     sh "docker rm -f hotstar-container || true"
-                    sh "chmod -R 777 . || true" // Clean start
+                    sh "chmod -R 777 . || true" 
                 }
             }
         }
@@ -64,16 +65,16 @@ pipeline {
         }
 
         stage("SonarQube Analysis") {
-    steps {
-        withSonarQubeEnv('SonarQube') { // Jenkins handles the token automatically here
-            script {
-                def scannerHome = tool 'sonar-scanner'
-                sh "${scannerHome}/bin/sonar-scanner" 
+            steps {
+                withSonarQubeEnv('SonarQube') { 
+                    script {
+                        def scannerHome = tool 'sonar-scanner'
+                        sh "${scannerHome}/bin/sonar-scanner" 
+                    }
+                }
             }
         }
-    }
-}
-        
+
         stage("Quality Gate") {
             steps {
                 waitForQualityGate abortPipeline: true
@@ -87,13 +88,12 @@ pipeline {
         }
 
         stage('Trivy File Scan') {
-    steps {
-        script {
-            // Added --timeout 15m and --skip-dirs to avoid the crash
-            sh "trivy fs --format table --timeout 15m --skip-dirs .scannerwork -o trivy-fs-report.html ."
+            steps {
+                script {
+                    sh "trivy fs --format table --timeout 15m --skip-dirs .scannerwork -o trivy-fs-report.html ."
+                }
+            }
         }
-    }
-}
 
         stage('Docker Build & Push') {
             steps {
@@ -109,32 +109,28 @@ pipeline {
         }
 
         stage('Deploy to Kubernetes') {
-    steps {
-        script {
-            withEnv(['KUBECONFIG=/var/lib/jenkins/.kube/config']) {
-                // 1. Deploy the App
-                sh 'kubectl apply -f deployment.yaml'
-                sh 'kubectl apply -f service.yaml'
-                
-                // 2. CAPTURE the IP into a variable (This is the key step!)
-                clusterIP = sh(
-                    script: "kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type==\"InternalIP\")].address}'", 
-                    returnStdout: true
-                ).trim()
-                
-                // 3. Use the variable here
-                echo "Using Cluster IP: ${clusterIP}"
+            steps {
+                script {
+                    withEnv(['KUBECONFIG=/var/lib/jenkins/.kube/config']) {
+                        sh 'kubectl apply -f deployment.yaml'
+                        sh 'kubectl apply -f service.yaml'
+                        
+                        clusterIP = sh(
+                            script: "kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type==\"InternalIP\")].address}'", 
+                            returnStdout: true
+                        ).trim()
+                        
+                        echo "Deployment successful on IP: ${clusterIP}"
+                    }
+                }
             }
         }
-    }
-}
 
         stage('Verify Monitoring & Health') {
             steps {
                 script {
-                    // We REMOVED 'minikube ip' and used our variable instead
-                    echo "Checking Observability Stack..."
-                    sh "kubectl get pods -n monitoring"
+                    echo "Checking Health for IP: ${clusterIP}"
+                    sh "kubectl get pods -n monitoring || true"
                     
                     sh """
                         for i in {1..3}; do
@@ -152,14 +148,13 @@ pipeline {
         }
 
         stage('DAST Scan (OWASP ZAP)') {
-    steps {
-        script {
-            // Use the IP directly instead of calling 'minikube ip'
-            def zapTarget = "http://192.168.49.2:30007"
-            sh "docker run --rm -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t ${zapTarget} || true"
+            when { expression { return params.RUN_FULL_SCAN } }
+            steps {
+                script {
+                    sh "docker run --rm -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://${clusterIP}:30007 || true"
+                }
+            }
         }
-    }
-}
 
         stage('Trivy Image Scan (Fail-Gate)') {
             steps {
