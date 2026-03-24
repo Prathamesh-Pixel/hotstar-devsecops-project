@@ -10,10 +10,10 @@ pipeline {
         DOCKER_TAG   = "${env.BUILD_NUMBER}"
     }
 
-    stages {
-        stage('Clean Workspace') {
+    stage('Clean Workspace') {
             steps {
-                cleanWs()
+                // Use standard shell delete instead of the plugin method
+                sh "rm -rf *" 
             }
         }
 
