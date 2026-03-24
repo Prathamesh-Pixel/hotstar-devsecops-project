@@ -10,7 +10,7 @@ RUN apk update && \
 
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+RUN npm install --network-timeout=1000000
 COPY . .
 
 # Build the Hotstar clone
