@@ -71,4 +71,3 @@ pipeline {
             echo "Pipeline finished. Check Grafana at http://localhost:31000 (if running)"
         }
     }
-}
