@@ -10,7 +10,7 @@ pipeline {
         DOCKER_TAG   = "${env.BUILD_NUMBER}"
     }
 
-    stage('Clean Workspace') {
+        stage('Clean Workspace') {
             steps {
                 // Use standard shell delete instead of the plugin method
                 sh "rm -rf *" 
@@ -71,3 +71,4 @@ pipeline {
             echo "Pipeline finished. Check Grafana at http://localhost:31000 (if running)"
         }
     }
+}
