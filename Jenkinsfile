@@ -10,11 +10,10 @@ pipeline {
         DOCKER_TAG   = "${env.BUILD_NUMBER}"
     }
 
-    stages {
-        stage('Clean Workspace & Disk') {
+    stage('Clean Workspace & Disk') {
             steps {
-                sh "rm -rf *" 
-                sh "docker system prune -f || true"
+                // Remove the "rm -rf *" line!
+                sh "docker system prune -f || true" 
             }
         }
 
