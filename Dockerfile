@@ -1,19 +1,19 @@
-# Use the latest Alpine for the best chance at pre-patched packages
-FROM alpine:latest 
+# 1. Use an image that ALREADY has Node and NPM installed
+FROM node:18-alpine
 
-# 1. Update the package index
-# 2. Add nodejs and npm (so we can run the app)
-# 3. Upgrade vulnerable libraries from your Trivy report
-RUN apk update || true && \
-    apk add --no-cache nodejs npm libcrypto3 libssl3 openssl || true && \
-    apk upgrade --no-cache libcrypto3 libssl3 || true
-
+# 2. Set the working directory
 WORKDIR /app
+
+# 3. Copy only the package files first (to optimize build cache)
 COPY package*.json ./
+
+# 4. Run install with a massive timeout to handle the network flickering
 RUN npm install --network-timeout=1000000
+
+# 5. Copy the rest of the source code
 COPY . .
 
-# Build the Hotstar clone
+# 6. Build the Hotstar clone (CI=false avoids failing on minor warnings)
 RUN CI=false npm run build
 
 EXPOSE 3000
