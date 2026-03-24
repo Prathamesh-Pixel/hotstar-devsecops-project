@@ -2,7 +2,7 @@ pipeline {
     agent any
     
     parameters {
-        booleanParam(name: 'RUN_SECURITY_SCANS', defaultValue: false, description: 'Uncheck this to skip Sonar/OWASP/ZAP/Trivy and save VM resources.')
+        booleanParam(name: 'RUN_SECURITY_SCANS', defaultValue: false, description: 'Uncheck this to skip scans and save VM resources.')
     }
 
     environment {
@@ -10,16 +10,17 @@ pipeline {
         DOCKER_TAG   = "${env.BUILD_NUMBER}"
     }
 
-    stage('Clean Workspace & Disk') {
+    stages {
+        stage('Clean Disk') {
             steps {
-                sh "docker system prune -f || true" 
+                sh "docker system prune -f || true"
             }
         }
 
         stage('SCA & Security Scans (SKIPPABLE)') {
             when { expression { return params.RUN_SECURITY_SCANS } }
             steps {
-                echo "Skipping heavy scans to save resources..."
+                echo "Skipping heavy scans..."
             }
         }
 
@@ -43,7 +44,6 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 sh "kubectl apply -f deployment.yaml || echo 'Deployment file missing'"
-                // Only restart if the deployment exists
                 sh "kubectl rollout restart deployment hotstar-deployment || echo 'Deployment not found'"
             }
         }
@@ -56,11 +56,11 @@ pipeline {
                 }
             }
         }
-    } // End of Stages
+    }
 
     post {
         always {
             echo "Pipeline finished. Check Grafana at http://localhost:31000"
         }
     }
-} // End of Pipeline
+}
