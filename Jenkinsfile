@@ -12,7 +12,6 @@ pipeline {
 
     stage('Clean Workspace & Disk') {
             steps {
-                // Remove the "rm -rf *" line!
                 sh "docker system prune -f || true" 
             }
         }
