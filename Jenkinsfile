@@ -43,11 +43,13 @@ pipeline {
         }
 
         stage('SCA Scan (OWASP Dependency-Check)') {
-            when { expression { return params.RUN_FULL_SCAN } }
+            when { 
+                expression { return params.RUN_FULL_SCAN } 
+            }
             steps {
                 script {
                     sh """
-                        docker run --rm \
+                        docker run --rm --dns 8.8.8.8 \
                         -e JAVA_OPTS="-Xmx4g" \
                         -v \$(pwd):/src \
                         -v /var/lib/jenkins/owasp-data:/usr/share/dependency-check/data \
@@ -59,6 +61,7 @@ pipeline {
                         --out /src \
                         --exclude '**/node_modules/**'
                     """
+                    // This tells Jenkins to parse the results for the dashboard
                     dependencyCheckPublisher pattern: 'dependency-check-report.xml'
                 }
             }
