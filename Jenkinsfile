@@ -157,7 +157,7 @@ pipeline {
     steps {
         script {
             // Added -v $(pwd):/zap/wrk/:rw and -u root to fix the report error
-            sh "docker run --rm -v \$(pwd):/zap/wrk/:rw -u root -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://${clusterIP}:30007 -r zap_report.html || true"
+            sh "docker run --rm --network host -v \$(pwd):/zap/wrk/:rw -u root -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://${clusterIP}:30007 -r zap_report.html || true"
         }
     }
 }
