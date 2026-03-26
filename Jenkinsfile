@@ -112,22 +112,24 @@ pipeline {
         }
 
         stage('Deploy to Kubernetes') {
-            steps {
-                script {
-                    withEnv(['KUBECONFIG=/var/lib/jenkins/.kube/config']) {
-                        sh 'kubectl apply -f deployment.yaml'
-                        sh 'kubectl apply -f service.yaml'
-                        
-                        clusterIP = sh(
-                            script: "kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type==\"InternalIP\")].address}'", 
-                            returnStdout: true
-                        ).trim()
-                        
-                        echo "Deployment successful on IP: ${clusterIP}"
-                    }
-                }
-            }
+    steps {
+        script {
+            // Use the direct path to the ubuntu user's config
+            def kubeConfig = "/home/ubuntu/.kube/config"
+            
+            sh "kubectl --kubeconfig=${kubeConfig} apply -f deployment.yaml"
+            sh "kubectl --kubeconfig=${kubeConfig} apply -f service.yaml"
+            
+            // Get the Cluster IP
+            clusterIP = sh(
+                script: "kubectl --kubeconfig=${kubeConfig} get nodes -o jsonpath='{.items[0].status.addresses[?(@.type==\"InternalIP\")].address}'", 
+                returnStdout: true
+            ).trim()
+            
+            echo "Deployment successful on IP: ${clusterIP}"
         }
+    }
+}
 
         stage('Verify Monitoring & Health') {
             steps {
