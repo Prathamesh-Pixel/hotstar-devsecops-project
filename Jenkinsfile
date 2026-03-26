@@ -102,7 +102,7 @@ pipeline {
             steps {
                 script {
                     sh "docker build -t ${SCAN_IMAGE} ."
-                    withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                    withCredentials([usernamePassword(credentialsId: 'docker-cred', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
                         sh "echo '$PASS' | docker login -u $USER --password-stdin"
                         sh "docker tag ${SCAN_IMAGE}:latest ${DOCKER_HUB_USER}/${SCAN_IMAGE}:latest"
                         sh "docker push ${DOCKER_HUB_USER}/${SCAN_IMAGE}:latest"
