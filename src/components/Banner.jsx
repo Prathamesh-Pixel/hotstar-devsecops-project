@@ -1,6 +1,5 @@
-import React from 'react'
-import './Banner.css'
-import  { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react';
+import './Banner.css';
 
 
 function Banner() {
